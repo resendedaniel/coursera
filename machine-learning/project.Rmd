@@ -1,0 +1,87 @@
+---
+title: "Project - Coursea - Machine Learning"
+author: "Daniel Resende"
+date: "June 20, 2015"
+output: html_document
+---
+
+```{r load_libraries, message=F, warning=F}
+library(caret)
+library(dplyr)
+library(randomForest)
+```
+
+# Project
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: [http://groupware.les.inf.puc-rio.br/har](http://groupware.les.inf.puc-rio.br/har) (see the section on the Weight Lifting Exercise Dataset). 
+
+# Load data
+```{r process_data, cache=TRUE, warning=F}
+training <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"))
+testing <- read.csv(url("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"))
+```
+There's no need to create a data partition, because the data are already divided in training and testing partition.
+
+Their dimension are: ```r dim(training)``` for the training set and ```r dim(testing)``` for the testing. We're gonna have a lot of work, too many variables to deal with.
+
+# Selecting features
+The classe is the one to be predicted. It's a classification data.
+
+The only thing I am sure right now is that the `user_name` is useless, sorry ```r as.character(sample(training$user_name,1))```.
+
+After some exploratory I have decided to remove all columns that more than 50% is NA and some control variables.
+```{r selecting_features, warning=F}
+training <- training[-(1:7)]
+training[-length(training)] <- sapply(training[-length(training)], function(x) {
+    if(!is.numeric(x)) {
+        x <- as.numeric(as.character(x))
+    } else {
+        x
+    }
+})
+valid <- sapply(training, function(x) {
+    sum(is.na(x)) / length(x) < .5
+})
+training <- training[valid]
+````
+
+# Training
+I am trying to classify the data, so it is a non linear model. A good approach in this case is tree classification method. More specifically I am using the randomForest method.
+
+I am going to create a 60% partition data to train the model and 40% to validate.
+```{r training, warning=FALSE}
+in_train <- createDataPartition(y=training$classe, p=.6, list=FALSE)
+training <- training[in_train, ]
+validating <- training[-in_train, ]
+
+t0 <- proc.time()
+model <- randomForest(classe ~ ., data=training)
+t1 <- proc.time()
+print(t1 - t0)
+
+print(model)
+```
+The model took a lot of time to produce results. But looks good.
+
+# Validation
+Now we use this model to predict the results for the validation data set and print the confusion matrix.
+```{r validation}
+validation_predicts <- predict(model, newdata=validating[names(validating) %in% names(training)])
+cm <- confusionMatrix(validation_predicts, validating$classe)
+print(cm)
+```
+Flawless. I am very happy, okay, it should be a serious report, no jokes, but after dozen of hours doing this I am happy. High accuracy like this ```r cm$overall[1]``` usually is overfitting, but I am on a validation set.
+
+# Testing
+At last, use the model to predict our test and generate the file as specified.
+```{r testing}
+testing_predicts <- predict(model, newdata=testing[names(testing) %in% names(training)])
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(testing_predicts)
+```

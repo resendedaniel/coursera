@@ -1,0 +1,136 @@
+---
+title: "Statistical Inference Course Project 2"
+author: "Daniel Resende"
+date: "February 20, 2015"
+output: html_document
+---
+
+### Overview
+To this project I was supose to perform some test about tooth growth in guinea pigs according to supplementation of Orange Juice and Vitamin C. To chec the results I applied T Test and P Value. To make it more visual, I overlayed distributions and its mean.
+```{r libraries}
+library(reshape2)
+library(plyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+### Load Data
+```{r loadData}
+data(ToothGrowth)
+# ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+ToothGrowth$supp <- factor(ToothGrowth$supp, levels=c("OJ", "VC"), labels=c("Orange Juice", "Vitamin C"))
+
+```
+
+### Basic Summary
+```{r basicSummary}
+l <- lapply(split(ToothGrowth, ToothGrowth$supp), function(x) {
+    lapply(split(x, x$dose), function(x) {
+        x$len
+    })
+})
+l <- unlist(l, recursive = FALSE)
+lapply(l, summary)
+````
+
+### Exploratory Analysis
+Make some simple analysis it looks like that both Orange Juice and Vitamin C improves the thooth growth on guinea pigs. Vitamin C looks better than Orange Juice in lower dosages. But some deeper calculus are needed to have more confidence.
+```{r exploratory, warning=FALSE, fig.width=16}
+g <- ggplot(ToothGrowth, aes(dose, len, colour=supp)) +
+    geom_point() +
+    facet_grid(supp ~ .) +
+    geom_smooth(method="loess")
+print(g)
+
+g <- ggplot(ToothGrowth, aes(supp, len)) + geom_boxplot(aes(fill=supp)) + facet_grid(. ~ dose)
+print(g)
+```
+
+#### Local t.test
+I have created a local_t.test function. It basically performs the t.test and plot a density charts of a pair of data. It plot both data distributions and its respective mean.
+```{r local_t.test}
+local_t.test <- function(m, l) {
+    # Get the right data
+    xind <- m[1] 
+    yind <- m[2]
+    x <- l[[xind]]
+    y <- l[[yind]]
+    
+    # T Test
+    t <- t.test(y, x)
+    
+    # Calculate interval
+    mdiff <- mean(y) - mean(x)
+    conf.int <- mdiff + c(-1, 1) * qt(.975, (length(x)-1 + length(y)-1)) * sqrt(sd(x)^2/length(x) + sd(y)^2/length(y))
+    conf.int <- conf.int / sd(x)
+    
+    # Formating plot
+    local_format <- function(x) {
+        format(round(x, 2), nsmall = 2)
+    }
+    plotTitle <- paste(names(l)[xind], names(l)[yind], sep=" X ")
+    plotTitle <- gsub(".0.5", " 0.5", plotTitle)
+    plotTitle <- gsub(".1", " 1.0", plotTitle)
+    plotTitle <- gsub(".2", " 2.0", plotTitle)
+    plotTitle <- paste(plotTitle, "\n",
+                       "95% Confidence Interval:",
+                       local_format(conf.int[1]),
+                       local_format(conf.int[2]))
+    plotTitle <- paste(plotTitle, "\n",
+                       "P value:", local_format(t$p.value))
+    plotTitle <- paste(plotTitle, "\n",
+                       "T value:", local_format(t$statistic))
+    
+    plotLabel <- c(names(l)[m[1]], names(l)[m[2]])
+
+    # Formatting plot data
+    standardizedX <- (x - mean(x)) / sd(x)
+    standardizedY <- (y - mean(x)) / sd(x)
+    df <- melt(data.frame(standardizedX, standardizedY), id=NULL)
+    df$variable <- factor(df$variable, labels=plotLabel)
+    meandf <- ddply(df, "variable", summarise, value=mean(value))
+    
+    # Plot
+    ggplot(df, aes(value, fill=variable)) +
+        geom_density(alpha=.5) +
+        geom_vline(data=meandf, aes(xintercept=value,  colour=variable),
+               linetype="dashed", size=1) +
+        xlim(range(c(standardizedX, standardizedY))) + 
+        theme(legend.position="bottom") +
+        ggtitle(plotTitle) +
+        xlab("standard deviation")
+}
+```
+
+### Results
+I have separated some combinations in groups. The first group contains only subjects that received Orange Juice. The second group only subjects that received Vitamin C. The third group is aggregated by dosage.
+```{r groups}
+groups <- lapply(list(c(1,2,1,3,2,3), c(1,2,1,3,2,3) +3, c(1,4,2,5,3,6)), function(l) {
+    matrix(l, ncol=2, byrow=TRUE)
+})
+```
+As we can see, the higher dosage produces more tooth growth at least for this interval. The 95% interval does not include the 0, so we have more than 95% confidence that those samples don't have the same mean.
+
+We can also rule out the null hypotesis because it would be unlikely each pair of samples has the same mean. All P Values below 0.05 indicates a 95% confidence.
+
+#### Orange Juice
+```{r group1, fig.width=16, warnings=FALSE}
+g <- apply(groups[[1]], 1, local_t.test, l=l)
+do.call(grid.arrange, c(g, list(ncol=3, main="Orange Juice")))
+```
+
+#### Vitamin C
+```{r group2, fig.width=16, warnings=FALSE}
+g <- apply(groups[[2]], 1, local_t.test, l=l)
+do.call(grid.arrange, c(g, list(ncol=3, main="Vitamin C")))
+```
+The Vitamin C also increases tooth growth on Guinea Pigs. All P Values below 0.05 and no 0 inside the Confidence Interval.
+
+#### Dosage
+```{r group3, fig.width=16, warnings=FALSE}
+g <- apply(groups[[3]], 1, local_t.test, l=l)
+do.call(grid.arrange, c(g, list(ncol=3, main="Dosage")))
+```
+The more interesting part is comparing the same dosage of Orange Juice and Vitamin C. The Vitamin C lookes better than Orange Juice with 0.5mg and 1.0mg dose. In the higher tested dose of 2.0, they seem to make no difference. We can see as they have almost the same mean and the P Value of 0.96 and 0 is inside the Confidence Level.
+
+It was fun!

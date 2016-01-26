@@ -1,0 +1,74 @@
+---
+title: "Statistical Inference Course Project"
+author: "Daniel Resende"
+date: "February 20, 2015"
+output: html_document
+---
+
+```{r libraries, echo=FALSE}
+library(ggplot2)
+```
+
+### Overview
+In this report I have made some simulations and compared them to some theoretical values concerning sample variances, sample means and its distribution. It works.
+
+```{r simulation}
+lambda <- .2
+nosim <- 1000
+n <- 40
+data <- rexp(nosim * n, lambda)
+m <- matrix(data, nosim)
+```
+I have made `r nosim` simulations with size of `r n` each. The values were generated using rexp distribution with lambda = `r lambda`. They were put in a matrix m.
+
+### 1. Sample x Theoretical means
+```{r sampleMeans, fig.width=16}
+sampleMeans <- apply(m, 1, mean)
+g <- ggplot(data.frame(sampleMeans), aes(sampleMeans)) +
+    geom_histogram(aes(y=..density..), binwidth=.1) +
+    geom_density() +
+    geom_vline(aes(xintercept=1/lambda, colour="Theoretical", linetype="Theoretical"), show_guide = TRUE) +
+    geom_vline(aes(xintercept=mean(data), colour="Simulation", linetype="Simulation"), show_guide = TRUE) +
+    scale_colour_manual(name="Means", values=c(Theoretical="blue", Simulation="red")) +
+    scale_linetype_manual(name="Means", values=c(Theoretical="dashed", Simulation="dashed"), guide=FALSE) +
+    ggtitle("Sample x Theoretical means") +
+    xlab("Mean") +
+    ylab("Density")
+print(g)
+```
+The theoretical mean is 1/lambda = `r 1/lambda` (blue dasehd line). In this simulation, our mean of sample means was `r mean(sampleMeans)` (red dashed line). Pretty close, isn't?
+
+### 2. Sample x Theoretical variances
+```{r variance, fig.width=16}
+sampleVariance <- apply(m, 1, var)
+g <- ggplot(data.frame(sampleVariance), aes(sampleVariance)) +
+    geom_histogram(aes(y=..density..), binwidth=1) +
+    geom_density() +
+    geom_vline(aes(xintercept=(1/lambda)^2, colour="Theoretical", linetype="Theoretical"), show_guide = TRUE) +
+    geom_vline(aes(xintercept=var(data), colour="Simulation", linetype="Simulation"), show_guide = TRUE) +
+    scale_colour_manual(name="Variances", values=c(Theoretical="blue", Simulation="red")) +
+    scale_linetype_manual(name="Variances", values=c(Theoretical="dashed", Simulation="dashed"), guide=FALSE) +
+    ggtitle("Sample x Theoretical variances") +
+    xlab("Variance") +
+    ylab("Density")
+print(g)
+```
+The variances fits as well. The theoretical variance is (1/lambda)^2 = `r (1/lambda)^2` and our simulation indicates `r var(data)`. We have done it again!
+
+### 3. Sample means density looks like normal distribution
+```{r norma, fig.width=16}
+mean <- s <- 1/lambda
+error <- 1/sqrt(n)
+seq <- seq(mean - 4 * s * error, mean + 4 * s * error, by=.1)
+g <- ggplot(data.frame(sampleMeans), aes(sampleMeans)) +
+    geom_density() +
+    geom_line(data=data.frame(x=seq, y=dnorm(seq,
+                                             mean=mean,
+                                             sd=s*error)),
+                 aes(x, y), linetype="dashed") +
+    ggtitle("Sample means x Normal densities") +
+    xlab("Values") +
+    ylab("Density")
+print(g)
+```
+Here is the density of our simulation (continous line) and a normal density (dashed line). The standard deviation of this normal was corrected by theoretical standard deviation * 1/sqrt(n) = `r 1/lambda * 1/sqrt(n)`.

@@ -1,0 +1,108 @@
+---
+title: "Coursera Regression Models"
+author: "Daniel Resende"
+date: "April 25, 2015"
+output: html_document
+---
+
+```{r libraries, echo=FALSE}
+library(reshape2)
+library(ggplot2)
+library(datasets)
+library(corrplot)
+library(car)
+```
+
+### Executive Summary
+```{r loadData, echo=FALSE}
+data(mtcars)
+fit <- list()
+```
+In this project we are going to analyse the `mtcars` dataset to explore the relationship among `miles per gallon` consumption, as outcome, and `manual` or `automatic` cars, as predictor.
+
+We are particularly interested in the following two questions:
+* Is an automatic or manual transmission better for MPG
+* Quantify the MPG difference between automatic and manual transmissions
+
+The `mtcars` has `r length(mtcars)` variables. We will have to make a multivariate regression to understand the influence of each one and of our target `am`.
+
+### Specific Regression
+As we want to check the `am` influence in mpg, the most straightfoward way to look is to make a regression considering only this variable.
+```{r specifRegression, fig.width=12, echo=FALSE}
+fit$specific <- lm(mpg ~ am, mtcars)
+summary(fit$specific)$coef
+boxplot(mpg ~ I(factor(am, labels=c("automatic", "manual"))), mtcars, pch=20)
+```
+At first sight, manual transmissions causes an increase of `r round(summary(fit$specific)$coef[2,1],2)` in `mpg`. It seems very significant, the mean estimated for manual is `r round(summary(fit$specific)$coef[2,3],2)` t deviations away (p-value of `r round(summary(fit$specific)$coef[2,4],6)`).
+
+But there are several other variables affecting the model and this increase might note be true.
+
+### Complete Regression
+After making the analysis of just one variable, we're going to throw them all in the model.
+```{r completeRegression, echo=FALSE}
+fit$complete <- lm(mpg ~ ., mtcars)
+rowam <- which(rownames(summary(fit$complete)[[4]])=="am")
+```
+Considering all variables, the effect of `am` decreases drastically. Now it only increases the `mpg` by `r round(summary(fit$complete)$coef[rowam,1], 2)`. Not only the influence, but the significance of this varible decreaeses too. The t value is only `r round(summary(fit$complete)$coef[rowam,3], 2)` deviances away (p-value of `r round(summary(fit$complete)$coef[rowam,4],4)`).
+
+### Selective Regression
+To make a better model and reduce the noise, we should exclude some more insignificant variables. To do that we are going to look to Correlation and Variance Inflation.
+
+Below it's possible to see the correlation among `am` and all other variables. A better looking plot is available on appendix.
+```{r correlation, warning=FALSE, echo=FALSE}
+correlation <- cor(sapply(mtcars, function(x) {
+    as.numeric(as.character(x))
+}))
+amcorrelation <- round(correlation[names(mtcars) == "am"], 2)
+names(amcorrelation) <- names(mtcars)
+amcorrelation[rev(order(abs(amcorrelation)))]
+```
+
+Another criteria to exclude variables is the Variance Inflation. Below, each variable impact is listed.
+```{r vif, echo=FALSE}
+rev(sort(sqrt(vif(fit$complete))))
+```
+We've decided to drop the `gear` and `drat`, because they have high Correlation with the `am`. We also decide to drop `vs` as it appears to have low significant impact and was just producing noise.
+
+```{r}
+fit$selective <- lm(mpg ~ am + disp + cyl + wt + qsec + hp, mtcars)
+anova(fit$specific, fit$selective, fit$complete)
+```
+
+### Conclusion
+`Manual` cars might have more autonomy than `automatic`. They can run around `r round(summary(fit$selective)$coef[1,1], 2)` miles per gallon more.
+
+But these numbers are not significant as they are `r round(summary(fit$selective)$coef[1,3],2)` t deviations away from the mean of `automatic` (p-value of `r round(summary(fit$selective)$coef[1,4],4)`). The conclusion is no conclusion as almost aways.
+
+More important is that you're more likely to drop coffee on your leg while driving `manual` car. The p-value is 0.000000000001. Source: I was a `manual` car owner.
+
+
+
+### Apendix
+#### Corelation
+```{r pairs, fig.width=6, fig.height=3, echo=FALSE}
+corrplot(correlation)
+```
+
+#### R Squared
+```{r rSquared, echo=FALSE}
+r.squared <- lapply(fit, function(f) { summary(f)$r.squared })
+```
+The selective model capture most of the variance,almost the same of the complete model (`r round(r.squared[[3]], 4)` against `r round(r.squared[[2]], 4)`). The model with just `am` as predictor captures only `r round(r.squared[[1]], 4)` of the variation.
+
+It makes the selective model pretty reasonable.
+
+#### Residual diagnostics
+The `Residuals vs Fitted` looks independent in the selective model. It might indicate that there are no significant variable out of the model.
+
+The residuals looks normaly distributed, as the `Normal Q-Q` indicates.
+
+The data does not have any significant outlier, the y axis of the scale location show all points are less than 1.5 standard deviations away. They look normal, as QQ plot show.
+```{r residuals, fig.width=12, echo=FALSE}
+par(mfrow=c(1,4))
+x <- mapply(function(f, n) {
+    print(n)
+    plot(f)
+    print(summary(f))$coef
+}, f=fit[2:3], n=names(fit)[2:3])
+```

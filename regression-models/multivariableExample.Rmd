@@ -1,0 +1,24 @@
+```{r generatingData}
+set.seed(314)
+n <- 100
+x <- rnorm(n)
+x2 <- rnorm(n)
+x3 <- rnorm(n)
+y <- x + x2 + x3 + rnorm(n, sd=.1)
+
+plot(1:n, y, pch=20, main="Raw Data")
+```
+
+```{r}
+e <- function(a, b) {
+    a - sum(a * b) / sum(b^2) * b
+}
+ey <- e(e(y, x2), e(x3, x2))
+ey <- resid(lm(y ~ x2 + x3 -1))
+ex <- e(e(x, x2), e(x3, x2))
+ex <- resid(lm(x ~ x2 + x3 -1))
+sum(ey * ex) / sum(ex^2)
+
+fit <- lm(y ~ x + x2 + x3 -1)
+coef(fit)
+```
