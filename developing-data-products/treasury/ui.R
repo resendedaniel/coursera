@@ -1,29 +1,33 @@
-
-# This is the user-interface definition of a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
-
 library(shiny)
 source('api.R')
-
-shinyUI(fluidPage(
-
-  # Application title
-  titlePanel("Old Faithful Geyser Data"),
-
-  # Sidebar with a slider input for number of bins
-  sidebarLayout(
-    sidebarPanel(
-        selectInput("select",
-                    label = h3("Treasuries ids"),
-                    choices= getTreasuriesIDs())
-    ),
-
-    # Show a plot of the generated distribution
-    mainPanel(
-      plotOutput("distPlot")
+ids <- get_treasuries_id()
+treasuries <- list()
+# Define the overall UI
+shinyUI(
+    
+    # Use a fluid Bootstrap layout
+    fluidPage(    
+        
+        # Give the page a title
+        titlePanel("Brazilian treasuries"),
+        
+        # Generate a row with a sidebar
+        sidebarLayout(      
+            
+            # Define the sidebar with one input
+            sidebarPanel(
+                selectInput("treasury", "Treasury:", 
+                            choices=ids,
+                            multiple=TRUE),
+                hr(),
+                helpText("Data from verios.com")
+            ),
+            
+            # Create a spot for the barplot
+            mainPanel(
+                plotOutput("phonePlot")  
+            )
+            
+        )
     )
-  )
-))
+)
