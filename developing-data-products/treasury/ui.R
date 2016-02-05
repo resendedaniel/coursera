@@ -1,7 +1,9 @@
 library(shiny)
 source('api.R')
 ids <- get_treasuries_id()
-treasuries <- list()
+ids <- ids[!grepl("\ ", ids)]
+ids <- sort(ids)
+
 # Define the overall UI
 shinyUI(
     
@@ -16,16 +18,19 @@ shinyUI(
             
             # Define the sidebar with one input
             sidebarPanel(
-                selectInput("treasury", "Treasury:", 
+                selectInput("treasury",
+                            "Treasuries id", 
                             choices=ids,
                             multiple=TRUE),
-                hr(),
-                helpText("Data from verios.com")
+                dateRangeInput("dates",
+                               label = "Date range", 
+                               start = as.Date("2003-01-1")),
+                helpText("Data from verios.com.br")
             ),
             
-            # Create a spot for the barplot
+            # Create a spot for the plot
             mainPanel(
-                plotOutput("phonePlot")  
+                plotOutput("plot")  
             )
             
         )

@@ -1,8 +1,8 @@
 name: treasury
 account: resendedaniel
 server: shinyapps.io
-bundleId: 362118
+bundleId: 366774
 url: https://resendedaniel.shinyapps.io/treasury/
-when: 1454175375.47326
+when: 1454670164.39493
 asMultiple: FALSE
 asStatic: FALSE

@@ -2,11 +2,13 @@ library(shiny)
 
 # Define a server for the Shiny app
 shinyServer(function(input, output) {
+    data_input <- reactive({
+        get_all_asset_dailies(input$treasury, input$dates)
+    })
     
-    # Fill in the spot we created for a plot
-    output$phonePlot <- renderPlot({
-        
+    output$plot <- renderPlot({
+        data <- data_input()
         # Render a barplot
-        plot_treasury(input$treasury)
+        plot_treasury(data)
     })
 })
