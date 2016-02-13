@@ -1,0 +1,7 @@
+base
+curl
+jsonlite
+dplyr
+reshape2
+lubridate
+ggplot2

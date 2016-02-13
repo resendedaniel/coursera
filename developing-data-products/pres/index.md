@@ -1,0 +1,53 @@
+---
+title       : Brazilian treasuries
+subtitle    : Brazilian economy is crap but its yields are high
+author      : Daniel Resende
+job         : Asset Manager at Verios Investimentos
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+## Brazilian economy is crap now
+I like this course a lot, with this I manage to create the first Brazilian Robo Advisor.
+
+We invest in three different classes of fixed income:
+- Postfixed (it pays around 14.25%)
+- Prefixed (ten year bond: 16%)
+- Inflation (7% over inflation, wich is around 10%)
+
+And two different equity markets
+- S&P 500 (broadly and know index)
+- Brazilian top 50 company (-85% in USD since 2007)
+
+---
+
+## But we have been there before
+
+Brazilian economy thrives when the currency is undervaluated. Their workforce got very cheap, their once 6th biggest economy infrastructure got idle and availabe for a very low price. Around 100% of population got in school since the 90s.
+
+BRL is on the lowest right now.
+
+![crap currency](assets/img/brl.png)
+
+---
+
+## Compare treasuries series
+
+Okay, this is a crappy app, no proud of it.
+But it will be a nice way to look to durations and convexities of brazilian fixed income
+
+![plot of chunk unnamed-chunk-1](assets/fig/unnamed-chunk-1-1.png)
+
+It was fun, see you in the Capstone Project
+
+---
+
+## This is Sao Paulo, brazilian biggest city.
+
+![Sao Paulo](assets/img/sao-paulo.jpg)
+
+
