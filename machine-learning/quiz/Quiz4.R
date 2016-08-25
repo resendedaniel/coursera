@@ -17,8 +17,13 @@ model_gbm <- train(y ~., data=vowel.train, method="gbm", verbos=F)
 print(model_rf)
 print(model_gbm)
 
-mean(predict(model_rf, newdata=vowel.test) == vowel.test$y)
-mean(predict(model_gbm, newdata=vowel.test) == vowel.test$y)
+pred_rf <- predict(model_rf, newdata=vowel.test)
+pred_gbm <- predict(model_gbm, newdata=vowel.test)
+
+mean(pred_rf == vowel.test$y)
+mean(pred_gbm == vowel.test$y)
+
+mean(pred_rf[pred_rf == pred_gbm] == vowel.test$y[pred_rf == pred_gbm])
 mean(predict(model_gbm, newdata=vowel.test) == predict(model_rf, newdata=vowel.test))
 
 ## 2
