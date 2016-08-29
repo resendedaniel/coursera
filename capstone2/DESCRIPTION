@@ -1,0 +1,10 @@
+Package: capstone2
+Type: Package
+Title: Makes me put Coursera Data Science all togethere
+Version: 0.1.0
+Author: Daniel Resende
+Maintainer: Daniel Resende <resende.daniel@gmail.com>
+Description: Yet to be figure out. But I guess I have to guess ______ <- that
+License: You can have it
+LazyData: TRUE
+RoxygenNote: 5.0.1
