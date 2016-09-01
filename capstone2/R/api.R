@@ -13,7 +13,7 @@ make_nplets <- function(d, nplet = 2) {
         d[i:(i+1)]
     })
     matrix <- t(matrix)
-    matrix <- matrix[order(matrix[,2]),]
+    # matrix <- matrix[order(matrix[,1]),]
     return(matrix)
 }
 
@@ -28,7 +28,7 @@ make_nplets <- function(d, nplet = 2) {
 tokenizeData <- function(d) {
     cat(".")
     d <- gsub("[[:punct:]]", " ", d)
-    d <- tolwer(d)
+    d <- tolower(d)
     return(strsplit(d, "\\s+"))
 }
 
@@ -40,16 +40,29 @@ tokenizeData <- function(d) {
 #'
 #' @export
 loadData <- function(n = -1L) {
+    print("loading data")
     t <- proc.time()
     data_file <- getOption("capstone.data_file")
     if(!file.exists(data_file)) downloadData()
-    data <- readLines("data/final/en_US/en_US.twitter.txt",
-                      n = n,
-                      warn = FALSE)
+    data_dir <- paste("data", "final", getOption("capstone.lang"), sep="/")
+    files <- list.files(data_dir)
+    files_path <- list.files(data_dir, full.names = TRUE)
+    data <- lapply(files_path,
+                   readLines,
+                   n = n,
+                   warn = FALSE)
+    names(data) <- files
     print(proc.time()) - t
     return(data)
 }
 
+#' downloadData
+#'
+#' Get data from server
+#'
+#' @return The dataset
+#'
+#' @export
 downloadData <- function() {
     download.file(getOption("capstone.data_url"), getOption("capstone.data_file"))
     unzip(data_file, exdir = "data")

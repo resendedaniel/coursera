@@ -1,0 +1,57 @@
+---
+title: "Exploratory"
+author: "Daniel Resende"
+date: "August 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE, cache=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+library(capstone2)
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+data <- loadData(n = -1)
+data <- lapply(data, tokenizeData)
+
+# number of lines
+# number of words
+# number of unique words
+```
+
+## The datasets
+
+There are three different sources in the dataset. From news, blogs and twitter.
+
+
+```{r wordcount}
+# Number of lines for each dataset
+sapply(data, length)
+
+# Number of words
+sapply(data, function(x) sum(sapply(x, length)))
+
+# Numer of unique words
+sapply(data, function(x) length(unique(unlist(x))))
+```
+
+
+```{r frequency}
+data_freq <- lapply(seq(length(data)), function(i) {
+    data.frame(table(unlist(data[[i]]))) %>%
+        rename(token = Var1) %>%
+        rename(count = Freq) %>%
+        arrange(-count) %>%
+        mutate(order = seq(nrow(.)) / nrow(.)) %>%
+        mutate(freq = count / sum(count)) %>%
+        mutate(cum_freq = cumsum(freq)) %>%
+        mutate(source = factor(names(data)[i]))
+})
+data_freq <- do.call(rbind, data_freq)
+
+ggplot(data_freq, aes(order, cum_freq, colour = source)) +
+    geom_line() +
+    scale_x_continuous(labels = percent) +
+    scale_y_continuous(labels = percent)
+```
