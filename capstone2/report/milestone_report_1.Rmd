@@ -1,0 +1,95 @@
+---
+title: "Exploratory"
+author: "Daniel Resende"
+date: "August 31, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r libraries, echo = FALSE, message=FALSE, warning=FALSE}
+library(capstone2)
+library(dplyr)
+library(ggplot2)
+library(scales)
+```
+
+```{r data, cache=TRUE}
+data <- loadData(n = 1500, report = TRUE)
+data <- lapply(data, tokenizeData)
+
+# number of lines
+# number of words
+# number of unique words
+```
+
+## The dataset
+
+There are three different sources in the dataset. From news, blogs and twitter.
+
+Which is good, the source might come from several different origins since the begining.
+
+
+```{r wordcount}
+# Number of lines for each dataset
+sapply(data, length)
+
+# Number of words
+sapply(data, function(x) sum(sapply(x, length)))
+
+# Numer of unique words
+sapply(data, function(x) length(unique(unlist(x))))
+```
+
+```{r frequency}
+library(dplyr)
+data_freq <- lapply(seq(length(data)), function(i) {
+    data.frame(table(unlist(data[[i]]))) %>%
+        rename(token = Var1) %>%
+        rename(count = Freq) %>%
+        arrange(-count) %>%
+        mutate(order = seq(nrow(.)) / nrow(.)) %>%
+        mutate(freq = count / sum(count)) %>%
+        mutate(cum_freq = cumsum(freq)) %>%
+        mutate(source = factor(names(data)[i]))
+})
+data_freq <- do.call(rbind, data_freq)
+
+g_freq <- ggplot(data_freq, aes(order, cum_freq, colour = source)) +
+    geom_line() +
+    scale_x_continuous("cumulative frequency", labels = percent) +
+    scale_y_continuous("universe of words", labels = percent)
+print(g_freq)
+```
+
+## The increment benefit
+Some words are more common than others. Connectives, pronoums, adjetives occurs more frequently than some obscure substantives or compound words.
+
+But their cost to analyze are almost the same. It might be good to cut off.
+
+My approach is to find the derivative of previous chart and cut all values < 1. Those cases are the words wich their contribution are less worth than the cost to process them.
+
+```{r conjugate_frequencies}
+conj_data <- do.call(c, data)
+conj_data_freq <- data.frame(table(unlist(conj_data))) %>%
+        rename(token = Var1) %>%
+        rename(count = Freq) %>%
+        arrange(-count) %>%
+        mutate(order = seq(nrow(.)) / nrow(.)) %>%
+        mutate(freq = count / sum(count)) %>%
+        mutate(cum_freq = cumsum(freq))
+each_word_freq <- conj_data_freq$order[1]
+tangent <- min(which(conj_data_freq$freq <= each_word_freq))
+g_conj_freq <- ggplot(conj_data_freq, aes(order, cum_freq)) +
+    geom_line() +
+    scale_x_continuous("cumulative frequency", labels = percent) +
+    scale_y_continuous("universe of words", labels = percent) +
+    geom_abline(slope = 1, intercept = conj_data_freq$cum_freq[tangent] - conj_data_freq$order[tangent], linetype = "dashed") +
+    geom_point(data = conj_data_freq[tangent,])
+print(g_conj_freq)
+
+```
+
+## The pair frequency

@@ -9,8 +9,10 @@
 make_nplets <- function(d, nplet = 2) {
     # nplets didn't work as I expected. I'll let them here for now
     n <- length(d)
-    matrix <- sapply(seq(n-1), function(i) {
-        d[i:(i+1)]
+    if (n < dplet) return()
+    nplet <- nplet - 1
+    matrix <- sapply(seq(n-nplet), function(i) {
+        d[i:(i+nplet)]
     })
     matrix <- t(matrix)
     # matrix <- matrix[order(matrix[,1]),]
@@ -26,7 +28,6 @@ make_nplets <- function(d, nplet = 2) {
 #' @return a list with words
 #' @export
 tokenizeData <- function(d) {
-    cat(".")
     d <- gsub("[[:punct:]]", " ", d)
     d <- tolower(d)
     return(strsplit(d, "\\s+"))
@@ -39,12 +40,12 @@ tokenizeData <- function(d) {
 #' @return The dataset
 #'
 #' @export
-loadData <- function(n = -1L) {
-    print("loading data")
-    t <- proc.time()
+loadData <- function(n = -1L, report = FALSE) {
     data_file <- getOption("capstone.data_file")
+    if (report) data_file <- paste0("../", data_file)
     if(!file.exists(data_file)) downloadData()
     data_dir <- paste("data", "final", getOption("capstone.lang"), sep="/")
+    if (report) data_dir <- paste0("../", data_dir)
     files <- list.files(data_dir)
     files_path <- list.files(data_dir, full.names = TRUE)
     data <- lapply(files_path,
@@ -52,7 +53,6 @@ loadData <- function(n = -1L) {
                    n = n,
                    warn = FALSE)
     names(data) <- files
-    print(proc.time()) - t
     return(data)
 }
 

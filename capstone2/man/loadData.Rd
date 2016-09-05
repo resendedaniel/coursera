@@ -4,7 +4,7 @@
 \alias{loadData}
 \title{loadData}
 \usage{
-loadData(n = -1L)
+loadData(n = -1L, report = FALSE)
 }
 \value{
 The dataset

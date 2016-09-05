@@ -8,3 +8,8 @@ Description: Yet to be figure out. But I guess I have to guess ______ <- that
 License: You can have it
 LazyData: TRUE
 RoxygenNote: 5.0.1
+Imports:
+    dplyr,
+    ggplot2,
+    scales,
+
