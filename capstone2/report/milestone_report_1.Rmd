@@ -17,9 +17,10 @@ library(scales)
 ```
 
 ```{r data, cache=TRUE}
-data <- loadData(n = 1500, report = TRUE)
+data <- loadData(n = 20000, report = TRUE)
 data <- lapply(data, tokenizeData)
 
+slope <- 10
 # number of lines
 # number of words
 # number of unique words
@@ -29,19 +30,23 @@ data <- lapply(data, tokenizeData)
 
 There are three different sources in the dataset. From news, blogs and twitter.
 
-Which is good, the source might come from several different origins since the begining.
-
+Which is good, the source might come from several different origins since the begining and it will be able to increase with more sources, including the users own type.
 
 ```{r wordcount}
 # Number of lines for each dataset
+cat("data length")
 sapply(data, length)
 
 # Number of words
+cat("number of words")
 sapply(data, function(x) sum(sapply(x, length)))
 
 # Numer of unique words
+cat("number of unique words")
 sapply(data, function(x) length(unique(unlist(x))))
 ```
+
+It might get huge in size and require a lot of computation. So the best algorithm might not be the most accurate, but one that uses not much resources.
 
 ```{r frequency}
 library(dplyr)
@@ -57,19 +62,22 @@ data_freq <- lapply(seq(length(data)), function(i) {
 })
 data_freq <- do.call(rbind, data_freq)
 
-g_freq <- ggplot(data_freq, aes(order, cum_freq, colour = source)) +
-    geom_line() +
-    scale_x_continuous("cumulative frequency", labels = percent) +
-    scale_y_continuous("universe of words", labels = percent)
-print(g_freq)
+# g_freq <- ggplot(data_freq, aes(order, cum_freq, colour = source)) +
+#     geom_line() +
+#     scale_x_continuous("cumulative frequency", labels = percent) +
+#     scale_y_continuous("universe of words", labels = percent)
+# print(g_freq)
 ```
 
 ## The increment benefit
+
 Some words are more common than others. Connectives, pronoums, adjetives occurs more frequently than some obscure substantives or compound words.
 
-But their cost to analyze are almost the same. It might be good to cut off.
+But they all costs to analyse. Make a good cut-off is a key point in this business.
 
-My approach is to find the derivative of previous chart and cut all values < 1. Those cases are the words wich their contribution are less worth than the cost to process them.
+My approach is to find the derivative of previous chart and cut all values < `r slope`. Those cases are the words wich their contribution are less worth than the cost to process them.
+
+It might be a future parameter to the model. It will be possible to analyse the cost of going deeper in the dataset or to remain in the most frequent words.
 
 ```{r conjugate_frequencies}
 conj_data <- do.call(c, data)
@@ -81,15 +89,26 @@ conj_data_freq <- data.frame(table(unlist(conj_data))) %>%
         mutate(freq = count / sum(count)) %>%
         mutate(cum_freq = cumsum(freq))
 each_word_freq <- conj_data_freq$order[1]
-tangent <- min(which(conj_data_freq$freq <= each_word_freq))
+tangent <- min(which(conj_data_freq$freq <= slope * each_word_freq))
 g_conj_freq <- ggplot(conj_data_freq, aes(order, cum_freq)) +
     geom_line() +
     scale_x_continuous("cumulative frequency", labels = percent) +
     scale_y_continuous("universe of words", labels = percent) +
-    geom_abline(slope = 1, intercept = conj_data_freq$cum_freq[tangent] - conj_data_freq$order[tangent], linetype = "dashed") +
+    geom_abline(slope = slope, intercept = conj_data_freq$cum_freq[tangent] - slope * conj_data_freq$order[tangent], linetype = "dashed") +
     geom_point(data = conj_data_freq[tangent,])
 print(g_conj_freq)
-
 ```
 
 ## The pair frequency
+```{r filter}
+valid_words <- conj_data_freq %>%
+    filter(count > sum(count) / nrow(.)) %>%
+    dplyr::select(token, count)
+```
+
+It will be used `r nrow(valid_words)` words to train the model. Wich seem pretty affordable.
+
+Here is the top 20.
+```{r top20}
+print(valid_words[1:20, ])
+```

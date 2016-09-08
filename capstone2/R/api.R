@@ -9,7 +9,7 @@
 make_nplets <- function(d, nplet = 2) {
     # nplets didn't work as I expected. I'll let them here for now
     n <- length(d)
-    if (n < dplet) return()
+    if (n < nplet) return()
     nplet <- nplet - 1
     matrix <- sapply(seq(n-nplet), function(i) {
         d[i:(i+nplet)]
@@ -52,6 +52,7 @@ loadData <- function(n = -1L, report = FALSE) {
                    readLines,
                    n = n,
                    warn = FALSE)
+    sapply(files_path, close)
     names(data) <- files
     return(data)
 }
